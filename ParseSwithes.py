@@ -1,12 +1,16 @@
-import argparse
+#!/usr/bin/python2
+from sys import argv
+import subprocess
+import string
 
 
+# Converts text into list of ditctionaries (each dictionary is switch{port: nodename/address/switch}
 def peel(unpeeled_list):
     peeled_list = []
     peeled_dict = {}
     for line in unpeeled_list:
         if line != '':
-            if line[0] == '[':  # and (line.find('node') != -1 or line.find('NODE') != -1):
+            if line[0] == '[':
                 peeled_dict[int(line[1:line.find(']')])] = line.split()[3].lower().replace('"', '')
             else:
                 if line[0] == 'S' and len(peeled_dict.items()) != 0:
@@ -15,15 +19,15 @@ def peel(unpeeled_list):
     return peeled_list
 
 
+# Converts node! to node!!!
 def get_nodename(node):
     nodename = node
-    if type(node) == int:
-        nodename = 'node' + str(nodename)
     while len(nodename) < 7:
         nodename = nodename[:4] + '0' + nodename[4::]
     return nodename
 
 
+# Uses list of peeled dictionaries to find missing ports in switches and tries to guess the nodename
 def find_missing_ports(peeled_dict, user_key):
     missing_ports = []
     for switch in peeled_dict:
@@ -55,6 +59,9 @@ def find_missing_ports(peeled_dict, user_key):
     return missing_ports
 
 
+'''Formatting section. Can be used for nodelist output'''
+
+
 def get_nodenumber(node, delta):
     nodenumber = int(node[4::]) + delta
     if nodenumber < 10:
@@ -76,10 +83,13 @@ def nodelist(nodes):
     return ndlist
 
 
-# parsep = argparse.ArgumentParser(description='find missing ibports')
-# parsep.add_argument(type = int)
-# parsep.add_argument('-l', help='long output format')
-# args = parsep.parse_args()
-ibnetdiscover_log = open("ibnetdiscover.log", 'r')
-switches = ibnetdiscover_log.readlines()
-print(find_missing_ports(peel(switches), 29))
+def get_swithes():
+    ibhosts = subprocess.Popen('ibnetdiscover', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    ibnetdiscover_log, err = ibhosts.communicate()
+    ibnetdiscover_log = string.split(ibnetdiscover_log, '\n')
+    return ibnetdiscover_log
+
+if int(argv[1]):
+    print(nodelist(find_missing_ports(peel(get_swithes()), int(argv[1]))))
+else:
+    print('Usage: swparse <port_number>')
