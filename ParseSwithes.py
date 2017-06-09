@@ -83,13 +83,14 @@ def nodelist(nodes):
     return ndlist
 
 
-def get_swithes():
+def get_switches():
     ibhosts = subprocess.Popen('ibnetdiscover', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     ibnetdiscover_log, err = ibhosts.communicate()
     ibnetdiscover_log = string.split(ibnetdiscover_log, '\n')
     return ibnetdiscover_log
 
-if int(argv[1]):
-    print(nodelist(find_missing_ports(peel(get_swithes()), int(argv[1]))))
+
+if (int(len(argv)) == 2):
+    print(nodelist(find_missing_ports(peel(get_switches()), int(argv[1]))))
 else:
     print('Usage: swparse <port_number>')
